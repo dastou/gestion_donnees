@@ -20,8 +20,8 @@ Application web Django permettant de gérer les relations et les métadonnées d
 
 1. **Cloner le dépôt**
 ```bash
-git clone [url-du-repo]
-cd [nom-du-projet]
+git clone https://github.com/dastou/gestion_donnees.git
+cd gestion_donnees
 ```
 
 2. **Créer et activer un environnement virtuel**
