@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Liste des Tables</h2>
+    <div class="mb-3">
+        <a href="{% url 'ajouter_table' %}" class="btn btn-primary">Ajouter une table</a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nom de la Table</th>
+                <th>Type</th>
+                <th>Zone</th>
+                <th>Base de Données</th>
+                <th>Description</th>
+                <th>Fréquence d'Ingestion</th>
+                <th>Heure de Lancement</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for table in tables %}
+            <tr>
+                <td>{{ table.nom_table }}</td>
+                <td>{{ table.type }}</td>
+                <td>{{ table.zone }}</td>
+                <td>{{ table.database }}</td>
+                <td>{{ table.description }}</td>
+                <td>{{ table.frequence_ingestion }}</td>
+                <td>{{ table.heure_de_lancement }}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'voir_table' table.nom_table %}" class="btn btn-info btn-sm">Voir</a>
+                        <a href="{% url 'modifier_table' table.nom_table %}" class="btn btn-warning btn-sm">Modifier</a>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal{{ table.nom_table|slugify }}">
+                            Supprimer
+                        </button>
+                    </div>
+
+                    <!-- Modal de confirmation de suppression -->
+                    <div class="modal fade" id="deleteModal{{ table.nom_table|slugify }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirmer la suppression</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Êtes-vous sûr de vouloir supprimer la table "{{ table.nom_table }}" ?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <form action="{% url 'supprimer_table' table.nom_table %}" method="POST" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="8">Aucune table trouvée.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

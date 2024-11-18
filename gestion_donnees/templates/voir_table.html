@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2>Détails de la table : {{ table.nom_table }}</h2>
+            <div>
+                <a href="{% url 'modifier_table' table.nom_table %}" class="btn btn-warning">Modifier</a>
+                <a href="{% url 'liste_tables' %}" class="btn btn-secondary">Retour à la liste</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Informations générales</h4>
+                    <dl class="row">
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">{{ table.type }}</dd>
+                        
+                        <dt class="col-sm-4">Zone</dt>
+                        <dd class="col-sm-8">{{ table.zone|default:"Non spécifié" }}</dd>
+                        
+                        <dt class="col-sm-4">Base de données</dt>
+                        <dd class="col-sm-8">{{ table.database|default:"Non spécifié" }}</dd>
+                        
+                        <dt class="col-sm-4">Description</dt>
+                        <dd class="col-sm-8">{{ table.description|default:"Non spécifié" }}</dd>
+                        
+                        <dt class="col-sm-4">Fréquence d'ingestion</dt>
+                        <dd class="col-sm-8">{{ table.frequence_ingestion|default:"Non spécifié" }}</dd>
+                        
+                        <dt class="col-sm-4">Heure de lancement</dt>
+                        <dd class="col-sm-8">{{ table.heure_de_lancement|default:"Non spécifié"  }}</dd>
+
+                        <dt class="col-sm-4">DB Refined</dt>
+                        <dd class="col-sm-8">{{ table.db_refined }}</dd>
+                        
+                        <dt class="col-sm-4">Fréquence KPI</dt>
+                        <dd class="col-sm-8">{{ table.frequence_kpi }}</dd>
+                        
+                        <dt class="col-sm-4">Suivie</dt>
+                        <dd class="col-sm-8">{{ table.suivie }}</dd>
+                    </dl>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4>Métriques de qualité</h4>
+                    <dl class="row">
+                        <dt class="col-sm-4">Qualité</dt>
+                        <dd class="col-sm-8">{{ table.qualite }}%</dd>
+                        
+                        <dt class="col-sm-4">Exhaustivité</dt>
+                        <dd class="col-sm-8">{{ table.exhaustivite }}%</dd>
+                        
+                        <dt class="col-sm-4">Précision</dt>
+                        <dd class="col-sm-8">{{ table.precision }}%</dd>
+                        
+                        <dt class="col-sm-4">Cohérence</dt>
+                        <dd class="col-sm-8">{{ table.coherence }}%</dd>
+                        
+                        <dt class="col-sm-4">Conformité</dt>
+                        <dd class="col-sm-8">{{ table.conformite }}%</dd>
+                        
+                        <dt class="col-sm-4">Unicité</dt>
+                        <dd class="col-sm-8">{{ table.unicite }}%</dd>
+                        
+                        <dt class="col-sm-4">Intégrité</dt>
+                        <dd class="col-sm-8">{{ table.integrite }}%</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h4>Tables sources</h4>
+                    <ul class="list-group">
+                        {% for source in table.toutes_tables_sources %}
+                            <li class="list-group-item">
+                                <a href="{% url 'voir_table' source.nom_table %}">{{ source.nom_table }}</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Aucune table source</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4>Tables cibles</h4>
+                    <ul class="list-group">
+                        {% for cible in table.toutes_tables_cibles %}
+                            <li class="list-group-item">
+                                <a href="{% url 'voir_table' cible.nom_table %}">{{ cible.nom_table }}</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Aucune table cible</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

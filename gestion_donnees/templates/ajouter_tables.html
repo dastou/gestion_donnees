@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'modification' %}Modifier{% else %}Ajouter{% endif %} une Table{% endblock %}
+
+{% block extra_head %}
+<style>
+    .relation-field {
+        display: none;
+    }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+    .no-tables-message {
+        font-style: italic;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">{% if mode == 'modification' %}Modifier la table : {{ table.nom_table }}{% else %}Ajouter une nouvelle table{% endif %}</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" id="tableForm">
+                    {% csrf_token %}
+                    
+                    <!-- Informations de base -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_nom_table" class="form-label">Nom de la table *</label>
+                            {{ form.nom_table.errors }}
+                            <input type="text" name="nom_table" id="id_nom_table"
+                                   value="{{ table.nom_table|default:form.nom_table.value|default:'' }}"
+                                   class="form-control {% if form.nom_table.errors %}is-invalid{% endif %}" 
+                                   {% if mode == 'modification' %}readonly{% else %}required{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_type" class="form-label">Type de table *</label>
+                            {{ form.type.errors }}
+                            <select name="type" id="id_type" 
+                                    class="form-control {% if form.type.errors %}is-invalid{% endif %}" 
+                                    required>
+                                <option value="">Sélectionner un type</option>
+                                {% for value, label in form.type.field.choices %}
+                                    <option value="{{ value }}" {% if value == table.type|default:form.type.value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Relations -->
+                    <div id="relationsContainer">
+                        <div id="noTablesMessage" class="alert alert-info" style="display: none;">
+                            Cette table sera la première dans la base de données. 
+                            Vous pourrez ajouter des relations avec d'autres tables plus tard.
+                        </div>
+
+                        <!-- Champs pour les tables cibles -->
+                        <div id="tablesCiblesSection" class="relation-field mb-3">
+                            <label for="id_tables_cibles" class="form-label">Tables alimentées par cette table</label>
+                            {{ form.tables_cibles.errors }}
+                            <select name="tables_cibles" id="id_tables_cibles" 
+                                    class="form-control {% if form.tables_cibles.errors %}is-invalid{% endif %}" 
+                                    multiple>
+                                {% for option in form.tables_cibles.field.choices %}
+                                    <option value="{{ option.0 }}" {% if option.0 in form.initial.tables_cibles %}selected{% endif %}>
+                                        {{ option.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Sélectionnez les tables que cette table va alimenter (optionnel)
+                            </small>
+                        </div>
+
+                        <!-- Champs pour les tables sources -->
+                        <div id="tablesSourcesSection" class="relation-field mb-3">
+                            <label for="id_tables_sources" class="form-label">Tables qui alimentent cette table</label>
+                            {{ form.tables_sources.errors }}
+                            <select name="tables_sources" id="id_tables_sources" 
+                                    class="form-control {% if form.tables_sources.errors %}is-invalid{% endif %}" 
+                                    multiple>
+                                {% for option in form.tables_sources.field.choices %}
+                                    <option value="{{ option.0 }}" {% if option.0 in form.initial.tables_sources %}selected{% endif %}>
+                                        {{ option.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Sélectionnez les tables qui vont alimenter cette table (optionnel)
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Autres informations -->
+                    <div class="mb-3">
+                        <label for="id_zone" class="form-label">Zone</label>
+                        {{ form.zone.errors }}
+                        <input type="text" name="zone" id="id_zone"
+                               value="{{ table.zone|default:form.zone.value|default:'' }}" 
+                               class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_database" class="form-label">Base de données</label>
+                        {{ form.database.errors }}
+                        <input type="text" name="database" id="id_database"
+                               value="{{ table.database|default:form.database.value|default:'' }}" 
+                               class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label">Description</label>
+                        {{ form.description.errors }}
+                        <textarea name="description" id="id_description" class="form-control" rows="3">{{ table.description|default:form.description.value|default:'' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_frequence_ingestion" class="form-label">Fréquence d'ingestion</label>
+                        {{ form.frequence_ingestion.errors }}
+                        <input type="text" name="frequence_ingestion" id="id_frequence_ingestion" 
+                               value="{{ table.frequence_ingestion|default:form.frequence_ingestion.value|default:'' }}"
+                               class="form-control">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_heure_de_lancement" class="form-label">Heure de lancement *</label>
+                                {{ form.heure_de_lancement.errors }}
+                                <input type="time" name="heure_de_lancement" id="id_heure_de_lancement" 
+                                       value="{{ table.heure_de_lancement|default:form.heure_de_lancement.value|default:'' }}"
+                                       class="form-control">
+                                <small class="form-text text-muted">Format: HH:MM (24 heures)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_commentaire" class="form-label">Commentaire</label>
+                        {{ form.commentaire.errors }}
+                        <textarea name="commentaire" id="id_commentaire" class="form-control" rows="2">{{ table.commentaire|default:form.commentaire.value|default:'' }}</textarea>
+                    </div>
+
+                    <!-- Nouveaux champs -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_db_refined" class="form-label">DB Refined</label>
+                                {{ form.db_refined.errors }}
+                                <input type="text" name="db_refined" id="id_db_refined" 
+                                       value="{{ table.db_refined|default:form.db_refined.value|default:'' }}"
+                                       class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_frequence_kpi" class="form-label">Fréquence KPI</label>
+                                {{ form.frequence_kpi.errors }}
+                                <input type="text" name="frequence_kpi" id="id_frequence_kpi" 
+                                       value="{{ table.frequence_kpi|default:form.frequence_kpi.value|default:'' }}"
+                                       class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_suivie" class="form-label">Suivie</label>
+                                {{ form.suivie.errors }}
+                                <select name="suivie" id="id_suivie" class="form-control">
+                                    <option value="oui" {% if table.suivie == 'oui' or form.suivie.value == 'oui' %}selected{% endif %}>Oui</option>
+                                    <option value="non" {% if table.suivie == 'non' or form.suivie.value == 'non' %}selected{% endif %}>Non</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Champs de pourcentage -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="id_qualite" class="form-label">Qualité (%)</label>
+                                {{ form.qualite.errors }}
+                                <input type="number" name="qualite" id="id_qualite" 
+                                       value="{{ table.qualite|default:form.qualite.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="id_exhaustivite" class="form-label">Exhaustivité (%)</label>
+                                {{ form.exhaustivite.errors }}
+                                <input type="number" name="exhaustivite" id="id_exhaustivite" 
+                                       value="{{ table.exhaustivite|default:form.exhaustivite.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="id_precision" class="form-label">Précision (%)</label>
+                                {{ form.precision.errors }}
+                                <input type="number" name="precision" id="id_precision" 
+                                       value="{{ table.precision|default:form.precision.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="id_coherence" class="form-label">Cohérence (%)</label>
+                                {{ form.coherence.errors }}
+                                <input type="number" name="coherence" id="id_coherence" 
+                                       value="{{ table.coherence|default:form.coherence.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="id_conformite" class="form-label">Conformité (%)</label>
+                                {{ form.conformite.errors }}
+                                <input type="number" name="conformite" id="id_conformite" 
+                                       value="{{ table.conformite|default:form.conformite.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="id_unicite" class="form-label">Unicité (%)</label>
+                                {{ form.unicite.errors }}
+                                <input type="number" name="unicite" id="id_unicite" 
+                                       value="{{ table.unicite|default:form.unicite.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="id_integrite" class="form-label">Intégrité (%)</label>
+                                {{ form.integrite.errors }}
+                                <input type="number" name="integrite" id="id_integrite" 
+                                       value="{{ table.integrite|default:form.integrite.value|default:'' }}"
+                                       class="form-control" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'liste_tables' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if mode == 'modification' %}Enregistrer les modifications{% else %}Enregistrer{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeField = document.getElementById('id_type');
+    const tablesCiblesSection = document.getElementById('tablesCiblesSection');
+    const tablesSourcesSection = document.getElementById('tablesSourcesSection');
+    const noTablesMessage = document.getElementById('noTablesMessage');
+
+    function toggleRelationFields() {
+        const selectedType = typeField.value;
+
+        if (selectedType === 'source' || selectedType === 'les deux') {
+            tablesCiblesSection.style.display = 'block';
+        } else {
+            tablesCiblesSection.style.display = 'none';
+        }
+
+        if (selectedType === 'cible' || selectedType === 'les deux') {
+            tablesSourcesSection.style.display = 'block';
+        } else {
+            tablesSourcesSection.style.display = 'none';
+        }
+
+        if (selectedType === '') {
+            noTablesMessage.style.display = 'block';
+        } else {
+            noTablesMessage.style.display = 'none';
+        }
+
+        updateRelationChoices(selectedType);
+    }
+
+    function updateRelationChoices(selectedType) {
+        fetch(`/get_available_tables/?type=${selectedType}`)
+            .then(response => response.json())
+            .then(data => {
+                const tablesCiblesSelect = document.getElementById('id_tables_cibles');
+                const tablesSourcesSelect = document.getElementById('id_tables_sources');
+
+                tablesCiblesSelect.options.length = 0;
+                tablesSourcesSelect.options.length = 0;
+
+                for (const [key, value] of Object.entries(data.tables_cibles)) {
+                    const option = new Option(value, key);
+                    tablesCiblesSelect.add(option);
+                }
+
+                for (const [key, value] of Object.entries(data.tables_sources)) {
+                    const option = new Option(value, key);
+                    tablesSourcesSelect.add(option);
+                }
+            });
+    }
+
+    typeField.addEventListener('change', toggleRelationFields);
+    toggleRelationFields();
+});
+</script>
+{% endblock %}

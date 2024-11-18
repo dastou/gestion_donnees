@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Rechercher les tables cibles</h2>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" 
+                                   placeholder="Entrez le nom d'une table source" 
+                                   value="{{ query }}" required>
+                            <button type="submit" class="btn btn-primary">Rechercher</button>
+                        </div>
+                    </form>
+
+                    {% if query %}
+                        {% if message %}
+                            <div class="alert alert-info">{{ message }}</div>
+                        {% else %}
+                            <h4>Tables cibles pour "{{ query }}" :</h4>
+                            <div class="list-group">
+                                {% for table in resultats %}
+                                    <a href="{% url 'voir_table' table.nom_table %}" 
+                                       class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{{ table.nom_table }}</h5>
+                                            <p>Type: {{ table.type }}</p>
+                                        </div>
+                                        {% if table.description %}
+                                            <p class="mb-1">Description: {{ table.description }}</p>
+                                        {% endif %}
+                                        <p>Base de données: {{ table.database|default:"Non spécifié" }}</p>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
